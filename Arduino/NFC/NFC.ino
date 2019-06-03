@@ -10,8 +10,10 @@
 //déclaration des variables
   boolean isLock = false;
   boolean isEmpty = true;
+  boolean sendUniqueCode = false;
   String password = "";
   const String passwordCompare = "bac987654";
+  const String uniqueCode = "123456789";
   const byte lockPinRly = 3;
   const byte btnPin = 4;
   const byte cptDistTrig = 5;
@@ -116,7 +118,7 @@ void loop() {
 
 //------------------------------------DETECTION COLIS--------------------------------------------------------
 
-    //si distance est inférieur à la longeur de la boite => présence colis
+    //si distance est inférieur à la longeur de la boite => présence colis 
     if(distance_cm < boxLenght){
       isEmpty = false;
       }
@@ -126,9 +128,10 @@ void loop() {
 
 //-----------------------------------STATUS DU VERROU---------------------------------------------------------
 
-    //si isEmpty est false et appui boutton=> verrouillage
+    //si isEmpty est false et appui boutton=> verrouillage & envoie du code unique
     if(!isEmpty && digitalRead(btnPin) == HIGH){
         isLock = true;
+        sendUniqueCode = true;
       }
 
     //si mot depasse correct => déverouillage et remise string password à ""
@@ -146,6 +149,29 @@ void loop() {
     else{
       digitalWrite(lockPinRly,LOW);
       }
+
+//------------------------------------ENVOIE CODE UNIQUE------------------------------------------------------
+
+//si la boite s'est verouillées => envoie le numéro colis
+if(sendUniqueCode){
+  success = nfc.inListPassiveTarget();
+
+  if(success){
+    
+    uint8_t codeUID[] = uniqueCode;
+    //contient éventuelement une réponse
+    uint8_t back[32];
+    uint8_t length = 32;
+
+    success = nfc.inDataExchange(apdu, sizeof(apdu), back, &length);
+
+    if(success) {
+      sendUniqueCode = false;
+    }
+  }
+}
+
+
 
 //attente de 0.5 second pour éviter une surcharge
     delay(500);
